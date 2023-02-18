@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import os
@@ -26,27 +26,26 @@ from graphnet.training.utils import make_dataloader
 
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
-    """Builds GNN from config"""
-    # Building model
+    
     detector = IceCubeKaggle(
         graph_builder=KNNGraphBuilder(nb_nearest_neighbours=8),
     )
     gnn = DynEdge(
         nb_inputs=detector.nb_outputs,
-        global_pooling_schemes=["min", "max", "mean"],
+        global_pooling_schemes=["min", "max", "mean", "sum"]
     )
-
-    if config["target"] == 'direction':
-        task = DirectionReconstructionWithKappa(
-            hidden_size=gnn.nb_outputs,
-            target_labels=config["target"],
-            loss_function=VonMisesFisher3DLoss(),
-        )
-        prediction_columns = [config["target"] + "_x", 
-                              config["target"] + "_y", 
-                              config["target"] + "_z", 
-                              config["target"] + "_kappa" ]
-        additional_attributes = ['zenith', 'azimuth', 'event_id']
+    
+    task = DirectionReconstructionWithKappa(
+        hidden_size=gnn.nb_outputs,
+        target_labels=config["target"],
+        loss_function=VonMisesFisher3DLoss(),
+    )
+    prediction_columns = [config["target"] + "_x", 
+                            config["target"] + "_y", 
+                            config["target"] + "_z", 
+                            config["target"] + "_kappa" ]
+                            
+    additional_attributes = ['zenith', 'azimuth', 'event_id']
 
     model = StandardModel(
         detector=detector,
@@ -77,7 +76,7 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
 
 
 def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
-    """Constructs training and validation dataloaders for training with early stopping."""
+    
     train_dataloader = make_dataloader(db = config['path'],
                                             selection = pd.read_pickle(config['train_selection'])[config['index_column']].ravel().tolist(),
                                             pulsemaps = config['pulsemap'],
@@ -111,16 +110,11 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
 
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    """Builds and trains GNN according to config."""
-
-    archive = os.path.join(config['base_dir'], "train_model_without_configs")
-    run_name = f"dynedge_{config['target']}_{config['run_name_tag']}"
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
     model = build_model(config, train_dataloader)
 
-    # Training model
     callbacks = [
         EarlyStopping(
             monitor="val_loss",
@@ -146,8 +140,8 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/database_1.db',
-        "inference_database_path": './data/database_2.db',
+        "path": './data/database_1-100.db',
+        "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
         "features": features,
@@ -159,7 +153,7 @@ config = {
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 5,
+                "max_epochs": 200,
                 "gpus": [0],
                 "distribution_strategy": None,
                 },
