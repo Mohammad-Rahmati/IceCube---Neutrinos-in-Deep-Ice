@@ -1,0 +1,1 @@
+jupyter nbconvert model.ipynb --to script

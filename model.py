@@ -1,17 +1,13 @@
-import os, sys
-os.system('clear')
+#!/usr/bin/env python
+# coding: utf-8
 
-import graphnet
-from graphnet.data.sqlite.sqlite_utilities import create_table
+# In[ ]:
+
+
+import os
 import pandas as pd
-import sqlite3
-import pyarrow.parquet as pq
-import sqlalchemy
-from tqdm import tqdm
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 import numpy as np
-from sklearn.model_selection import train_test_split
-
 from pytorch_lightning.callbacks import EarlyStopping
 from torch.optim.adam import Adam
 from graphnet.data.constants import FEATURES, TRUTH
@@ -19,16 +15,14 @@ from graphnet.models import StandardModel
 from graphnet.models.detector.icecube import IceCubeKaggle
 from graphnet.models.gnn import DynEdge
 from graphnet.models.graph_builders import KNNGraphBuilder
-from graphnet.models.task.reconstruction import DirectionReconstructionWithKappa, ZenithReconstructionWithKappa, AzimuthReconstructionWithKappa
-from graphnet.training.callbacks import ProgressBar, PiecewiseLinearLR
-from graphnet.training.loss_functions import VonMisesFisher3DLoss, VonMisesFisher2DLoss
+from graphnet.models.task.reconstruction import DirectionReconstructionWithKappa
+from graphnet.training.callbacks import PiecewiseLinearLR
+from graphnet.training.loss_functions import VonMisesFisher3DLoss
 from graphnet.training.labels import Direction
 from graphnet.training.utils import make_dataloader
-from graphnet.utilities.logging import get_logger
-from pytorch_lightning import Trainer
-import pandas as pd
 
-logger = get_logger()
+
+# In[ ]:
 
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
@@ -78,23 +72,14 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
     
     return model
 
-def load_pretrained_model(config: Dict[str,Any], state_dict_path: str = '/kaggle/input/dynedge-pretrained/dynedge_pretrained_batch_1_to_50/state_dict.pth') -> StandardModel:
-    train_dataloader, _ = make_dataloaders(config = config)
-    model = build_model(config = config, 
-                        train_dataloader = train_dataloader)
-    #model._inference_trainer = Trainer(config['fit'])
-    model.load_state_dict(state_dict_path)
-    model.prediction_columns = [config["target"] + "_x", 
-                              config["target"] + "_y", 
-                              config["target"] + "_z", 
-                              config["target"] + "_kappa" ]
-    model.additional_attributes = ['zenith', 'azimuth', 'event_id']
-    return model
+
+# In[ ]:
+
 
 def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     """Constructs training and validation dataloaders for training with early stopping."""
     train_dataloader = make_dataloader(db = config['path'],
-                                            selection = pd.read_csv(config['train_selection'])[config['index_column']].ravel().tolist(),
+                                            selection = pd.read_pickle(config['train_selection'])[config['index_column']].ravel().tolist(),
                                             pulsemaps = config['pulsemap'],
                                             features = features,
                                             truth = truth,
@@ -107,7 +92,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
                                             )
     
     validate_dataloader = make_dataloader(db = config['path'],
-                                            selection = pd.read_csv(config['validate_selection'])[config['index_column']].ravel().tolist(),
+                                            selection = pd.read_pickle(config['validate_selection'])[config['index_column']].ravel().tolist(),
                                             pulsemaps = config['pulsemap'],
                                             features = features,
                                             truth = truth,
@@ -121,11 +106,13 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
                                             )
     return train_dataloader, validate_dataloader
 
+
+# In[ ]:
+
+
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
     """Builds and trains GNN according to config."""
-    logger.info(f"features: {config['features']}")
-    logger.info(f"truth: {config['truth']}")
-    
+
     archive = os.path.join(config['base_dir'], "train_model_without_configs")
     run_name = f"dynedge_{config['target']}_{config['run_name_tag']}"
 
@@ -149,39 +136,9 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
     )
     return model
 
-def inference(model, config: Dict[str, Any]) -> pd.DataFrame:
-    """Applies model to the database specified in config['inference_database_path'] and saves results to disk."""
-    # Make Dataloader
-    test_dataloader = make_dataloader(db = config['inference_database_path'],
-                                            selection = None, # Entire database
-                                            pulsemaps = config['pulsemap'],
-                                            features = features,
-                                            truth = truth,
-                                            batch_size = config['batch_size'],
-                                            num_workers = config['num_workers'],
-                                            shuffle = False,
-                                            labels = {'direction': Direction()},
-                                            index_column = config['index_column'],
-                                            truth_table = config['truth_table'],
-                                            )
-    
-    # Get predictions
-    results = model.predict_as_dataframe(
-        gpus = [0],
-        dataloader = test_dataloader,
-        prediction_columns=model.prediction_columns,
-        additional_attributes=model.additional_attributes,
-    )
-    # Save predictions and model to file
-    archive = os.path.join(config['base_dir'], "train_model_without_configs")
-    run_name = f"dynedge_{config['target']}_{config['run_name_tag']}"
-    db_name = config['path'].split("/")[-1].split(".")[0]
-    path = os.path.join(archive, db_name, run_name)
-    logger.info(f"Writing results to {path}")
-    os.makedirs(path, exist_ok=True)
 
-    results.to_csv(f"{path}/results.csv")
-    return results
+# In[ ]:
+
 
 # Constants
 features = FEATURES.KAGGLE
@@ -189,43 +146,39 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/database/database_51-55.db',
-        "inference_database_path": './data/database/database_1.db',
+        "path": './data/database_1.db',
+        "inference_database_path": './data/database_2.db',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
         "features": features,
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": 'my_example',
-        "batch_size": 100,
-        "num_workers": 16,
+        "batch_size": 1024,
+        "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 50,
+                "max_epochs": 5,
                 "gpus": [0],
                 "distribution_strategy": None,
                 },
-        'train_selection': './data/train_selection_max_200_pulses.csv',
-        'validate_selection': './data/validate_selection_max_200_pulses.csv',
+        'train_selection': './data/train_selection_max_200_pulses.pkl',
+        'validate_selection': './data/validate_selection_max_200_pulses.pkl',
         'test_selection': None,
         'base_dir': 'training'
 }
 
-def convert_to_3d(df: pd.DataFrame) -> pd.DataFrame:
-    """Converts zenith and azimuth to 3D direction vectors"""
-    df['true_x'] = np.cos(df['azimuth']) * np.sin(df['zenith'])
-    df['true_y'] = np.sin(df['azimuth'])*np.sin(df['zenith'])
-    df['true_z'] = np.cos(df['zenith'])
-    return df
-def calculate_angular_error(df : pd.DataFrame) -> pd.DataFrame:
-    """Calcualtes the opening angle (angular error) between true and reconstructed direction vectors"""
-    df['angular_error'] = np.arccos(df['true_x']*df['direction_x'] + df['true_y']*df['direction_y'] + df['true_z']*df['direction_z'])
-    return df
+
+# In[ ]:
+
 
 model = train_dynedge_from_scratch(config = config)
-results = inference(model, config)
+torch.save(model.state_dict(), 'state_dict.pth')
 
-results = convert_to_3d(results)
-results = calculate_angular_error(results)
-results.to_csv('results.csv')
+
+# In[ ]:
+
+
+
+
