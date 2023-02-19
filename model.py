@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import os
 import pandas as pd
 from typing import Any, Dict, List
@@ -20,9 +14,7 @@ from graphnet.training.callbacks import PiecewiseLinearLR
 from graphnet.training.loss_functions import VonMisesFisher3DLoss
 from graphnet.training.labels import Direction
 from graphnet.training.utils import make_dataloader
-
-
-# In[ ]:
+import torch
 
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
@@ -71,10 +63,6 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
     
     return model
 
-
-# In[ ]:
-
-
 def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     
     train_dataloader = make_dataloader(db = config['path'],
@@ -105,10 +93,6 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
                                             )
     return train_dataloader, validate_dataloader
 
-
-# In[ ]:
-
-
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
@@ -131,16 +115,13 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
     return model
 
 
-# In[ ]:
-
-
 # Constants
 features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/database_1-100.db',
+        "path": './data/big_batch_1.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -153,9 +134,10 @@ config = {
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 200,
+                "max_epochs": 100,
                 "gpus": [0],
                 "distribution_strategy": None,
+                "ckpt_path": None
                 },
         'train_selection': './data/train_selection_max_200_pulses.pkl',
         'validate_selection': './data/validate_selection_max_200_pulses.pkl',
@@ -164,15 +146,8 @@ config = {
 }
 
 
-# In[ ]:
-
-
 model = train_dynedge_from_scratch(config = config)
-torch.save(model.state_dict(), 'state_dict.pth')
-
-
-# In[ ]:
-
+torch.save(model.state_dict(), 'm2.pth')
 
 
 
