@@ -89,8 +89,8 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
                                             labels = {'direction': Direction()},
                                             index_column = config['index_column'],
                                             truth_table = config['truth_table'],
-                                          
                                             )
+                                            
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
@@ -121,7 +121,7 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/big_batch_1.db',
+        "path": './data/big_batch_2.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
