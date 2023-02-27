@@ -121,7 +121,7 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/big_batch_3.db',
+        "path": './data/big_batch_5.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -147,7 +147,7 @@ config = {
 
 
 model = train_dynedge_from_scratch(config = config)
-torch.save(model.state_dict(), 'm3.pth')
+torch.save(model.state_dict(), 'm5.pth')
 
 
 
