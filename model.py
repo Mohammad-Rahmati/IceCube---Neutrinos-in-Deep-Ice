@@ -137,7 +137,7 @@ config = {
                 "max_epochs": 200,
                 "gpus": [0],
                 "distribution_strategy": None,
-                "ckpt_path": 'checkpoints/epoch=22-step=919862.ckpt'
+                "ckpt_path": None
                 },
         'train_selection': './data/train_selection_max_200_pulses.pkl',
         'validate_selection': './data/validate_selection_max_200_pulses.pkl',
@@ -145,9 +145,19 @@ config = {
         'base_dir': 'training'
 }
 
-
-model = train_dynedge_from_scratch(config = config)
-torch.save(model.state_dict(), 'M0.pth')
+while True:
+    try:
+        files = os.listdir('checkpoints/')
+        if files:
+            config['fit']['ckpt_path'] = 'checkpoints/' + files[0]
+        else:
+            config['fit']['ckpt_path'] = None
+        model = train_dynedge_from_scratch(config=config)
+        torch.save(model.state_dict(), 'M0.pth')
+        break
+    except Exception as e:
+        print(f"An error occurred: {e}. Retrying in 10 seconds...")
+        time.sleep(10)
 
 
 
