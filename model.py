@@ -121,7 +121,7 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/big_batch_5.db',
+        "path": 'data/extra_big_batch_0.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -129,15 +129,15 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": 'my_example',
-        "batch_size": 1024,
+        "batch_size": 512,
         "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 100,
+                "max_epochs": 200,
                 "gpus": [0],
                 "distribution_strategy": None,
-                "ckpt_path": None
+                "ckpt_path": 'checkpoints/epoch=22-step=919862.ckpt'
                 },
         'train_selection': './data/train_selection_max_200_pulses.pkl',
         'validate_selection': './data/validate_selection_max_200_pulses.pkl',
@@ -147,7 +147,7 @@ config = {
 
 
 model = train_dynedge_from_scratch(config = config)
-torch.save(model.state_dict(), 'm5.pth')
+torch.save(model.state_dict(), 'M0.pth')
 
 
 
