@@ -15,6 +15,8 @@ from graphnet.training.loss_functions import VonMisesFisher3DLoss
 from graphnet.training.labels import Direction
 from graphnet.training.utils import make_dataloader
 import torch
+import time
+import gc
 
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
@@ -154,9 +156,14 @@ while True:
             config['fit']['ckpt_path'] = None
         model = train_dynedge_from_scratch(config=config)
         torch.save(model.state_dict(), 'M0.pth')
+
         break
     except Exception as e:
         print(f"An error occurred: {e}. Retrying in 10 seconds...")
+
+        torch.cuda.empty_cache()
+        torch.cuda.reset_max_memory_allocated()
+        gc.collect()
         time.sleep(10)
 
 
