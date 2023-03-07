@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from typing import Any, Dict, List
 import numpy as np
-from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from torch.optim.adam import Adam
 from graphnet.data.constants import FEATURES, TRUTH
 from graphnet.models import StandardModel
@@ -100,14 +100,29 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
     model = build_model(config, train_dataloader)
-
     callbacks = [
         EarlyStopping(
             monitor="val_loss",
-            patience=config["early_stopping_patience"],
+            patience=config["early_stopping_patience"]
+        ),
+        ModelCheckpoint(
+            monitor="val_loss",
+            dirpath=os.path.join(config["base_dir"], config["run_name_tag"]),
+            filename="best_model",
+            save_top_k=1,
+            mode="min",
+            save_weights_only = False
+        ),
+        ModelCheckpoint(
+            monitor= None,
+            mode = 'min', 
+            every_n_train_steps = 0, 
+            every_n_epochs = 1, 
+            train_time_interval = None
         )
-    ]
 
+    ]
+    
     model.fit(
         train_dataloader,
         validate_dataloader,
@@ -130,7 +145,7 @@ config = {
         "features": features,
         "truth": truth,
         "index_column": 'event_id',
-        "run_name_tag": 'my_example',
+        "run_name_tag": 'batch_0',
         "batch_size": 512,
         "num_workers": 32,
         "target": 'direction',
@@ -141,14 +156,19 @@ config = {
                 "distribution_strategy": None,
                 "ckpt_path": None
                 },
-        'train_selection': './data/train_selection_max_200_pulses.pkl',
-        'validate_selection': './data/validate_selection_max_200_pulses.pkl',
+        'train_selection': './data/train_selection_max_200_pulses_0.pkl',
+        'validate_selection': './data/validate_selection_max_200_pulses_0.pkl',
         'test_selection': None,
         'base_dir': 'training'
 }
 
 while True:
     try:
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        gc.collect()
+
+
         files = os.listdir('checkpoints/')
         if files:
             config['fit']['ckpt_path'] = 'checkpoints/' + files[0]
@@ -159,12 +179,13 @@ while True:
 
         break
     except Exception as e:
-        print(f"An error occurred: {e}. Retrying in 10 seconds...")
+        with open('error.txt', 'a') as f:
+            f.write('\n' + str(e) + '\n')
+            f.write('-'*50)
 
         torch.cuda.empty_cache()
         torch.cuda.reset_max_memory_allocated()
         gc.collect()
+        
         time.sleep(10)
-
-
-
+        
