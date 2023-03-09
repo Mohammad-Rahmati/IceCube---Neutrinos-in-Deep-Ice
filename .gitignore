@@ -1,9 +1,7 @@
 *.parquet
 *.csv
 *.log
-*.ckpt
 *.json
 *.db
 *.pkl
 *.pth
-data/extra_big_batch_0.db-journal

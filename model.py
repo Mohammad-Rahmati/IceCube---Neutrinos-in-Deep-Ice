@@ -96,6 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
+    idx = 1
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -108,10 +109,10 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
         ModelCheckpoint(
             monitor="val_loss",
             dirpath=os.path.join(config["base_dir"], config["run_name_tag"]),
-            filename="best_model",
+            filename=f"M{idx}",
             save_top_k=1,
             mode="min",
-            save_weights_only = False
+            save_weights_only = True
         ),
         ModelCheckpoint(
             monitor= None,
@@ -137,27 +138,28 @@ features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
+idx = 1
 config = {
-        "path": 'data/extra_big_batch_0.db',
+        "path": f'data/extra_big_batch_{idx}.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
         "features": features,
         "truth": truth,
         "index_column": 'event_id',
-        "run_name_tag": 'batch_0',
+        "run_name_tag": f'batch_{idx}',
         "batch_size": 512,
         "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 200,
+                "max_epochs": 5,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
                 },
-        'train_selection': './data/train_selection_max_200_pulses_0.pkl',
-        'validate_selection': './data/validate_selection_max_200_pulses_0.pkl',
+        'train_selection': f'./data/train_selection_max_500_pulses_{idx}.pkl',
+        'validate_selection': f'./data/validate_selection_max_500_pulses_{idx}.pkl',
         'test_selection': None,
         'base_dir': 'training'
 }
@@ -175,7 +177,7 @@ while True:
         else:
             config['fit']['ckpt_path'] = None
         model = train_dynedge_from_scratch(config=config)
-        torch.save(model.state_dict(), 'M0.pth')
+        torch.save(model.state_dict(), f'M{idx}.pth')
 
         break
     except Exception as e:
