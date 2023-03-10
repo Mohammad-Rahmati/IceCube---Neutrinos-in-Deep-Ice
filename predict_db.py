@@ -16,6 +16,7 @@ import pandas as pd
 import torch
 from typing import Any, Dict, List, Optional
 import gc
+import time
 
 def build_model(config: Dict[str,Any], train_dataloader: Any, pooling_list: List) -> StandardModel:
     """Builds GNN from config"""
@@ -159,7 +160,7 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": 'submission',
-        "batch_size": 128,
+        "batch_size": 100,
         "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
@@ -188,15 +189,30 @@ test_dataloader = make_dataloader(db = config['inference_database_path'],
                                             )
 
 
-gc.collect()
-torch.cuda.empty_cache()
-checkpoint = torch.load('training/batch_0/M0.ckpt')
-model = load_pretrained_model(config = config, state_dict_path = checkpoint['state_dict'], pooling_list=["min", "max", "mean", "sum"])
-pred_M0 = model.predict_as_dataframe(
-        gpus = [0],
-        dataloader = test_dataloader,
-        prediction_columns=model.prediction_columns,
-        additional_attributes=['event_id']
-    )
 
-pred_M0[['event_id', 'direction_kappa']].to_pickle('./inference/pred_M0_B2.pkl')
+while True:
+    try:
+        gc.collect()
+        torch.cuda.empty_cache()
+        checkpoint = torch.load('training/batch_1/M0.ckpt')
+        model = load_pretrained_model(config = config, state_dict_path = checkpoint['state_dict'], pooling_list=["min", "max", "mean", "sum"])
+        pred = model.predict_as_dataframe(
+                gpus = [0],
+                dataloader = test_dataloader,
+                prediction_columns=model.prediction_columns,
+                additional_attributes=['event_id']
+            )
+
+        pred.set_index('event_id').to_pickle('./inference/pred_M0_B2.pkl')
+
+        break
+    except Exception as e:
+        with open('error_prediction.txt', 'a') as f:
+            f.write('\n' + str(e) + '\n')
+            f.write('-'*50)
+
+        torch.cuda.empty_cache()
+        torch.cuda.reset_max_memory_allocated()
+        gc.collect()
+        
+        time.sleep(10)
