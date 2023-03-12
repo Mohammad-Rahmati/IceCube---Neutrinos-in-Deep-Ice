@@ -96,7 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    idx = 2
+    idx = 3
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -132,13 +132,12 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
     )
     return model
 
-
 # Constants
 features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
-idx = 2
+idx = 3
 config = {
         "path": f'data/extra_big_batch_{idx}.db',
         "inference_database_path": '',

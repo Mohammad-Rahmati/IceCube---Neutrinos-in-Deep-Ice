@@ -1,3 +1,4 @@
+import time
 from pytorch_lightning.callbacks import EarlyStopping
 from torch.optim.adam import Adam
 from graphnet.data.constants import FEATURES, TRUTH
@@ -16,7 +17,7 @@ import pandas as pd
 import torch
 from typing import Any, Dict, List, Optional
 import gc
-import time
+
 
 def build_model(config: Dict[str,Any], train_dataloader: Any, pooling_list: List) -> StandardModel:
     """Builds GNN from config"""
@@ -153,7 +154,7 @@ truth = TRUTH.KAGGLE
 # Configuration
 config = {
         "path": './data/test_database.db',
-        "inference_database_path": 'data/extra_big_batch_2.db',
+        "inference_database_path": None,
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
         "features": features,
@@ -175,44 +176,63 @@ config = {
         'base_dir': 'training'
 }
 
-test_dataloader = make_dataloader(db = config['inference_database_path'],
-                                            selection = None, # Entire database
-                                            pulsemaps = config['pulsemap'],
-                                            features = features,
-                                            truth = truth,
-                                            batch_size = config['batch_size'],
-                                            num_workers = config['num_workers'],
-                                            shuffle = False,
-                                            labels = None, # Cannot make labels in test data
-                                            index_column = config['index_column'],
-                                            truth_table = config['truth_table'],
-                                            )
+for b_id in [3]:
+    config['inference_database_path'] = f'data/extra_big_batch_{b_id}.db'
+    test_dataloader = make_dataloader(db = config['inference_database_path'],
+                                                selection = None, # Entire database
+                                                pulsemaps = config['pulsemap'],
+                                                features = features,
+                                                truth = truth,
+                                                batch_size = config['batch_size'],
+                                                num_workers = config['num_workers'],
+                                                shuffle = False,
+                                                labels = None, # Cannot make labels in test data
+                                                index_column = config['index_column'],
+                                                truth_table = config['truth_table'],
+                                                )
 
+    m_list = [1]
+    # m_list.remove(b_id)
+    for m_id in m_list:
+        counter = 0
+        while True:
+            try:
+                with open('log_prediction.txt', 'a') as p:
+                    current_time = time.time()
+                    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
 
+                    p.write("\ntime:" +  str(formatted_time))
+                    p.write('\n' + str(m_id) + '_' + str(b_id) + '\n')
+                    p.write('-'*50)
 
-while True:
-    try:
-        gc.collect()
-        torch.cuda.empty_cache()
-        checkpoint = torch.load('training/batch_1/M0.ckpt')
-        model = load_pretrained_model(config = config, state_dict_path = checkpoint['state_dict'], pooling_list=["min", "max", "mean", "sum"])
-        pred = model.predict_as_dataframe(
-                gpus = [0],
-                dataloader = test_dataloader,
-                prediction_columns=model.prediction_columns,
-                additional_attributes=['event_id']
-            )
+                gc.collect()
+                torch.cuda.empty_cache()
+                checkpoint = torch.load(f'training/batch_{m_id}/M{m_id}.ckpt')
+                model = load_pretrained_model(config = config, state_dict_path = checkpoint['state_dict'], pooling_list=["min", "max", "mean", "sum"])
+                pred = model.predict_as_dataframe(
+                        gpus = [0],
+                        dataloader = test_dataloader,
+                        prediction_columns=model.prediction_columns,
+                        additional_attributes=['event_id']
+                    )
 
-        pred.set_index('event_id').to_pickle('./inference/pred_M0_B2.pkl')
+                pred.set_index('event_id').to_pickle(f'./inference/pred_M{m_id}_B{b_id}.pkl')
 
-        break
-    except Exception as e:
-        with open('error_prediction.txt', 'a') as f:
-            f.write('\n' + str(e) + '\n')
-            f.write('-'*50)
+                break
+            except Exception as e:
+                with open('error_prediction.txt', 'a') as f:
+                    current_time = time.time()
+                    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
 
-        torch.cuda.empty_cache()
-        torch.cuda.reset_max_memory_allocated()
-        gc.collect()
-        
-        time.sleep(10)
+                    f.write("\ntime:" + str(formatted_time))
+                    f.write('\n' + str(e) + '\n')
+                    f.write('-'*50)
+
+                torch.cuda.empty_cache()
+                torch.cuda.reset_max_memory_allocated()
+                gc.collect()
+                
+                time.sleep(10)
+                if counter > 5:
+                    break
+                counter += 1
