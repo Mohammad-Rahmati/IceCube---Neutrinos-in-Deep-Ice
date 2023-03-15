@@ -176,8 +176,8 @@ config = {
         'base_dir': 'training'
 }
 
-for b_id in [3]:
-    config['inference_database_path'] = f'data/extra_big_batch_{b_id}.db'
+for b_id in [5]:
+    config['inference_database_path'] = f'data/B{b_id}/extra_big_batch_{b_id}.db'
     test_dataloader = make_dataloader(db = config['inference_database_path'],
                                                 selection = None, # Entire database
                                                 pulsemaps = config['pulsemap'],
@@ -191,7 +191,7 @@ for b_id in [3]:
                                                 truth_table = config['truth_table'],
                                                 )
 
-    m_list = [1]
+    m_list = [3]
     # m_list.remove(b_id)
     for m_id in m_list:
         counter = 0
@@ -215,7 +215,7 @@ for b_id in [3]:
                         prediction_columns=model.prediction_columns,
                         additional_attributes=['event_id']
                     )
-
+                print('start preparing dataframe')
                 pred.set_index('event_id').to_pickle(f'./inference/pred_M{m_id}_B{b_id}.pkl')
 
                 break

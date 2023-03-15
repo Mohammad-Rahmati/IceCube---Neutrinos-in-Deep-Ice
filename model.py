@@ -52,7 +52,7 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
             "milestones": [
                 0,
                 len(train_dataloader) / 2,
-                len(train_dataloader) * config["fit"]["max_epochs"],
+                len(train_dataloader) * 30,
             ],
             "factors": [1e-02, 1, 1e-02],
         },
@@ -96,7 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    idx = 3
+    idx = 0
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -109,7 +109,7 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
         ModelCheckpoint(
             monitor="val_loss",
             dirpath=os.path.join(config["base_dir"], config["run_name_tag"]),
-            filename=f"M{idx}",
+            filename=f"F{idx}",
             save_top_k=1,
             mode="min",
             save_weights_only = True
@@ -137,9 +137,9 @@ features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
-idx = 3
+idx = 0
 config = {
-        "path": f'data/extra_big_batch_{idx}.db',
+        "path": f'data/F0/focus_batch_{idx}.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -152,7 +152,7 @@ config = {
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 5,
+                "max_epochs": 100,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
