@@ -66,9 +66,8 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
     return model
 
 def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
-    
     train_dataloader = make_dataloader(db = config['path'],
-                                            selection = pd.read_pickle(config['train_selection'])[config['index_column']].ravel().tolist(),
+                                            selection = pd.read_pickle(config['event_dict_path'])['train'],
                                             pulsemaps = config['pulsemap'],
                                             features = features,
                                             truth = truth,
@@ -81,7 +80,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
                                             )
     
     validate_dataloader = make_dataloader(db = config['path'],
-                                            selection = pd.read_pickle(config['validate_selection'])[config['index_column']].ravel().tolist(),
+                                            selection = pd.read_pickle(config['event_dict_path'])['validate'],
                                             pulsemaps = config['pulsemap'],
                                             features = features,
                                             truth = truth,
@@ -109,7 +108,7 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
         ModelCheckpoint(
             monitor="val_loss",
             dirpath=os.path.join(config["base_dir"], config["run_name_tag"]),
-            filename=f"F{idx}",
+            filename=f"B{idx}",
             save_top_k=1,
             mode="min",
             save_weights_only = True
@@ -147,8 +146,8 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": f'batch_{idx}',
-        "batch_size": 512,
-        "num_workers": 32,
+        "batch_size": 128,
+        "num_workers": 30,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
@@ -157,8 +156,7 @@ config = {
                 "distribution_strategy": None,
                 "ckpt_path": None
                 },
-        'train_selection': f'./data/train_selection_max_500_pulses_{idx}.pkl',
-        'validate_selection': f'./data/validate_selection_max_500_pulses_{idx}.pkl',
+        'event_dict_path': f'data/F{idx}/event_dict.pkl',
         'test_selection': None,
         'base_dir': 'training'
 }
@@ -169,24 +167,29 @@ while True:
         torch.cuda.reset_peak_memory_stats()
         gc.collect()
 
-
         files = os.listdir('checkpoints/')
         if files:
             config['fit']['ckpt_path'] = 'checkpoints/' + files[0]
         else:
             config['fit']['ckpt_path'] = None
         model = train_dynedge_from_scratch(config=config)
-        torch.save(model.state_dict(), f'M{idx}.pth')
+        torch.save(model.state_dict(), f'F{idx}.pth')
 
         break
+    
     except Exception as e:
         with open('error.txt', 'a') as f:
+            current_time = time.time()
+            formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
+            f.write("\ntime:" + str(formatted_time))
             f.write('\n' + str(e) + '\n')
             f.write('-'*50)
 
         torch.cuda.empty_cache()
-        torch.cuda.reset_max_memory_allocated()
+        torch.cuda.reset_peak_memory_stats()
         gc.collect()
         
         time.sleep(10)
+        os.system('clear')
+        
         
