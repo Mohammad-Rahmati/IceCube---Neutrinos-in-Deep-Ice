@@ -1,0 +1,30 @@
+
+time:2023-03-19 13:15:29
+CUDA error: unspecified launch failure
+CUDA kernel errors might be asynchronously reported at some other API call,so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1.
+--------------------------------------------------
+time:2023-03-19 14:13:53
+Caught DatabaseError in DataLoader worker process 21.
+Original Traceback (most recent call last):
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/worker.py", line 287, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 49, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 49, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/mo/graphnet/src/graphnet/data/dataset.py", line 358, in __getitem__
+    features, truth, node_truth, loss_weight = self._query(
+  File "/home/mo/graphnet/src/graphnet/data/dataset.py", line 464, in _query
+    features_pulsemap = self.query_table(
+  File "/home/mo/graphnet/src/graphnet/data/sqlite/sqlite_dataset.py", line 71, in query_table
+    result = self._conn.execute(
+sqlite3.DatabaseError: database disk image is malformed
+
+--------------------------------------------------
+time:2023-03-21 10:16:37
+no such table: pulse_table
+--------------------------------------------------
+time:2023-03-21 10:16:47
+no such table: pulse_table
+--------------------------------------------------

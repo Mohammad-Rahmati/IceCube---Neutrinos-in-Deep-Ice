@@ -18,6 +18,7 @@ import torch
 import time
 import gc
 
+# time.sleep(8*60*60)
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
     
@@ -51,8 +52,8 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
         scheduler_kwargs={
             "milestones": [
                 0,
-                len(train_dataloader) / 2,
-                len(train_dataloader) * 30,
+                len(train_dataloader),
+                len(train_dataloader) * 4,
             ],
             "factors": [1e-02, 1, 1e-02],
         },
@@ -95,7 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    idx = 0
+    idx = 3
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -108,7 +109,7 @@ def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
         ModelCheckpoint(
             monitor="val_loss",
             dirpath=os.path.join(config["base_dir"], config["run_name_tag"]),
-            filename=f"B{idx}",
+            filename=f"F{idx}",
             save_top_k=1,
             mode="min",
             save_weights_only = True
@@ -136,9 +137,9 @@ features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
-idx = 0
+idx = 3
 config = {
-        "path": f'data/F0/focus_batch_{idx}.db',
+        "path": f'data/F{idx}/focus_batch_{idx}.db',
         "inference_database_path": '',
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -146,12 +147,12 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": f'batch_{idx}',
-        "batch_size": 128,
-        "num_workers": 30,
+        "batch_size": 512,
+        "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 100,
+                "max_epochs": 5,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
