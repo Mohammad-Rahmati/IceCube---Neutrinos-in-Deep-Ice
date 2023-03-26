@@ -77,7 +77,7 @@ def convert_to_sqlite(meta_data_path: str,
                     if meta_data_batch.shape[0] > 0:
 
                         pulses = load_input(batch_id = batch_id, input_data_folder= input_data_folder, event_ids = event_ids)       
-                        pulses = pulses.groupby('event_id').head(500).reset_index(drop=True)
+                        pulses = pulses.groupby('event_id').head(600).reset_index(drop=True)
                         
                         first_event_id_meta = meta_data_batch.iloc[0].event_id
                         last_event_id_meta = meta_data_batch.iloc[-1].event_id
@@ -133,12 +133,10 @@ def convert_to_sqlite(meta_data_path: str,
 
     del meta_data_iter 
 
-with open('focus_dict.pkl', 'rb') as f:
+with open('uniform_dict.pkl', 'rb') as f:
     focus_dict = pickle.load(f)
 
-assert len(focus_dict['f0']) + len(focus_dict['f1']) + len(focus_dict['f2']) + len(focus_dict['f3']) == 131953924, "focus_dict does not contain all events"
-
-idx = 3
+idx = 5
 event_id_list = focus_dict[f'f{idx}']
 database_path = f'./data/F{idx}/focus_batch_{idx}.db'
 engine = sqlalchemy.create_engine("sqlite:///" + database_path)
@@ -146,7 +144,7 @@ convert_to_sqlite(meta_data_path,
                 database_path=database_path,
                 input_data_folder=input_data_folder,
                 batch_size=200000,
-                batch_ids=list(range(1,651,1)),
+                batch_ids=list(range(1,661,1)),
                 event_ids=event_id_list,
                 engine=engine)
 
@@ -157,7 +155,7 @@ with sqlite3.connect(database_path) as con:
 train_selection, validate_selection = train_test_split(np.arange(0, events_df.shape[0], 1), 
                                                         shuffle=True, 
                                                         random_state = 42, 
-                                                        test_size=0.01)
+                                                        test_size=0.02)
 
 train_selection_events = events_df[events_df.index.isin(train_selection)]['event_id'].to_list()
 validate_selection_events = events_df[events_df.index.isin(validate_selection)]['event_id'].to_list()

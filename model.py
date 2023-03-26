@@ -18,7 +18,7 @@ import torch
 import time
 import gc
 
-# time.sleep(8*60*60)
+# time.sleep(12*60)
 
 def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
     
@@ -52,8 +52,8 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
         scheduler_kwargs={
             "milestones": [
                 0,
-                len(train_dataloader),
-                len(train_dataloader) * 4,
+                len(train_dataloader) * 2,
+                len(train_dataloader) * config["fit"]["max_epochs"],
             ],
             "factors": [1e-02, 1, 1e-02],
         },
@@ -96,7 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    idx = 3
+    idx = 5
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -137,7 +137,7 @@ features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
-idx = 3
+idx = 5
 config = {
         "path": f'data/F{idx}/focus_batch_{idx}.db',
         "inference_database_path": '',
@@ -147,12 +147,12 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": f'batch_{idx}',
-        "batch_size": 512,
+        "batch_size": 400,
         "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 5,
+                "max_epochs": 50,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
@@ -162,35 +162,21 @@ config = {
         'base_dir': 'training'
 }
 
-while True:
-    try:
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
-        gc.collect()
+try:
+    files = os.listdir('checkpoints/')
+    if files:
+        config['fit']['ckpt_path'] = 'checkpoints/' + files[0]
+    else:
+        config['fit']['ckpt_path'] = None
+    model = train_dynedge_from_scratch(config=config)
+    torch.save(model.state_dict(), f'F{idx}.pth')
 
-        files = os.listdir('checkpoints/')
-        if files:
-            config['fit']['ckpt_path'] = 'checkpoints/' + files[0]
-        else:
-            config['fit']['ckpt_path'] = None
-        model = train_dynedge_from_scratch(config=config)
-        torch.save(model.state_dict(), f'F{idx}.pth')
-
-        break
-    
-    except Exception as e:
-        with open('error.txt', 'a') as f:
-            current_time = time.time()
-            formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
-            f.write("\ntime:" + str(formatted_time))
-            f.write('\n' + str(e) + '\n')
-            f.write('-'*50)
-
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
-        gc.collect()
-        
-        time.sleep(10)
-        os.system('clear')
+except Exception as e:
+    with open('error.txt', 'a') as f:
+        current_time = time.time()
+        formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time))
+        f.write("\ntime:" + str(formatted_time))
+        f.write('\n' + str(e) + '\n')
+        f.write('-'*50)
         
         

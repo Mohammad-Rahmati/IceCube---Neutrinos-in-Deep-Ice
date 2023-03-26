@@ -153,7 +153,7 @@ truth = TRUTH.KAGGLE
 
 # Configuration
 config = {
-        "path": './data/test_database.db',
+        "path": f'data/F4/focus_batch_4.db',
         "inference_database_path": None,
         "pulsemap": 'pulse_table',
         "truth_table": 'meta_table',
@@ -176,8 +176,8 @@ config = {
         'base_dir': 'training'
 }
 
-for b_id in [5]:
-    config['inference_database_path'] = f'data/B{b_id}/extra_big_batch_{b_id}.db'
+for b_id in [4]:
+    config['inference_database_path'] = f'data/F{b_id}/focus_batch_{b_id}.db'
     test_dataloader = make_dataloader(db = config['inference_database_path'],
                                                 selection = None, # Entire database
                                                 pulsemaps = config['pulsemap'],
@@ -207,7 +207,7 @@ for b_id in [5]:
 
                 gc.collect()
                 torch.cuda.empty_cache()
-                checkpoint = torch.load(f'training/batch_{m_id}/M{m_id}.ckpt')
+                checkpoint = torch.load(f'training/batch_{m_id}/F{m_id}.ckpt')
                 model = load_pretrained_model(config = config, state_dict_path = checkpoint['state_dict'], pooling_list=["min", "max", "mean", "sum"])
                 pred = model.predict_as_dataframe(
                         gpus = [0],
@@ -216,7 +216,7 @@ for b_id in [5]:
                         additional_attributes=['event_id']
                     )
                 print('start preparing dataframe')
-                pred.set_index('event_id').to_pickle(f'./inference/pred_M{m_id}_B{b_id}.pkl')
+                pred.set_index('event_id').to_pickle(f'./inference/pred_M{m_id}_F{b_id}.pkl')
 
                 break
             except Exception as e:
