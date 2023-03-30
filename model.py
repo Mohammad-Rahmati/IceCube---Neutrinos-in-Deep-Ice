@@ -152,7 +152,7 @@ config = {
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 50,
+                "max_epochs": 60,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
