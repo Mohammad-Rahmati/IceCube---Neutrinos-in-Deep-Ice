@@ -1,0 +1,25 @@
+
+time:2023-03-30 09:07:04
+DataLoader worker (pid 19354) is killed by signal: Segmentation fault. 
+--------------------------------------------------
+time:2023-03-30 10:22:18
+DataLoader worker (pid 272376) is killed by signal: Segmentation fault. 
+--------------------------------------------------
+time:2023-03-31 16:10:03
+Caught DatabaseError in DataLoader worker process 30.
+Original Traceback (most recent call last):
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/worker.py", line 287, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 49, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/mo/miniconda3/envs/graphnet/lib/python3.8/site-packages/torch/utils/data/_utils/fetch.py", line 49, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/mo/graphnet/src/graphnet/data/dataset.py", line 358, in __getitem__
+    features, truth, node_truth, loss_weight = self._query(
+  File "/home/mo/graphnet/src/graphnet/data/dataset.py", line 464, in _query
+    features_pulsemap = self.query_table(
+  File "/home/mo/graphnet/src/graphnet/data/sqlite/sqlite_dataset.py", line 71, in query_table
+    result = self._conn.execute(
+sqlite3.DatabaseError: database disk image is malformed
+
+--------------------------------------------------
