@@ -53,7 +53,7 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
             "milestones": [
                 0,
                 len(train_dataloader) * 2,
-                len(train_dataloader) * config["fit"]["max_epochs"],
+                len(train_dataloader) * 60,
             ],
             "factors": [1e-02, 1, 1e-02],
         },
@@ -152,7 +152,7 @@ config = {
         "target": 'direction',
         "early_stopping_patience": 5,
         "fit": {
-                "max_epochs": 60,
+                "max_epochs": 100,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None
