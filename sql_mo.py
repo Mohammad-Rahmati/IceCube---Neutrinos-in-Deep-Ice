@@ -136,7 +136,7 @@ def convert_to_sqlite(meta_data_path: str,
 with open('uniform_dict.pkl', 'rb') as f:
     focus_dict = pickle.load(f)
 
-idx = 5
+idx = 6
 event_id_list = focus_dict[f'f{idx}']
 database_path = f'./data/F{idx}/focus_batch_{idx}.db'
 engine = sqlalchemy.create_engine("sqlite:///" + database_path)
