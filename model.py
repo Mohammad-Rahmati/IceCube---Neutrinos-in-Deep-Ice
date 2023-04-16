@@ -53,7 +53,7 @@ def build_model(config: Dict[str,Any], train_dataloader: Any) -> StandardModel:
             "milestones": [
                 0,
                 len(train_dataloader) * 2,
-                len(train_dataloader) * 60,
+                len(train_dataloader) * 80,
             ],
             "factors": [1e-02, 1, 1e-02],
         },
@@ -96,7 +96,7 @@ def make_dataloaders(config: Dict[str, Any]) -> List[Any]:
     return train_dataloader, validate_dataloader
 
 def train_dynedge_from_scratch(config: Dict[str, Any]) -> StandardModel:
-    idx = 6
+    idx = 3
 
     train_dataloader, validate_dataloader = make_dataloaders(config = config)
 
@@ -137,7 +137,7 @@ features = FEATURES.KAGGLE
 truth = TRUTH.KAGGLE
 
 # Configuration
-idx = 6
+idx = 3
 config = {
         "path": f'data/F{idx}/focus_batch_{idx}.db',
         "inference_database_path": '',
@@ -147,12 +147,12 @@ config = {
         "truth": truth,
         "index_column": 'event_id',
         "run_name_tag": f'batch_{idx}',
-        "batch_size": 400,
+        "batch_size": 500,
         "num_workers": 32,
         "target": 'direction',
         "early_stopping_patience": 10,
         "fit": {
-                "max_epochs": 100,
+                "max_epochs": 200,
                 "gpus": [0],
                 "distribution_strategy": None,
                 "ckpt_path": None

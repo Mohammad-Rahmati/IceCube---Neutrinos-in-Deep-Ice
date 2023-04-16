@@ -77,7 +77,7 @@ def convert_to_sqlite(meta_data_path: str,
                     if meta_data_batch.shape[0] > 0:
 
                         pulses = load_input(batch_id = batch_id, input_data_folder= input_data_folder, event_ids = event_ids)       
-                        pulses = pulses.groupby('event_id').head(600).reset_index(drop=True)
+                        pulses = pulses.groupby('event_id').head(1000).reset_index(drop=True)
                         
                         first_event_id_meta = meta_data_batch.iloc[0].event_id
                         last_event_id_meta = meta_data_batch.iloc[-1].event_id
@@ -133,10 +133,10 @@ def convert_to_sqlite(meta_data_path: str,
 
     del meta_data_iter 
 
-with open('uniform_dict.pkl', 'rb') as f:
+with open('focus_dict.pkl', 'rb') as f:
     focus_dict = pickle.load(f)
 
-idx = 6
+idx = 3
 event_id_list = focus_dict[f'f{idx}']
 database_path = f'./data/F{idx}/focus_batch_{idx}.db'
 engine = sqlalchemy.create_engine("sqlite:///" + database_path)
